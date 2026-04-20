@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "4000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:5000 # ยิงหา Backend โดยตรง
+    depends_on:
+      - backend
+  
+  backend:
+    build:
+      context: ./backend
