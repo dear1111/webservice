@@ -1,13 +1,5 @@
-import Navbar from '../components/navbar';
-import Footer from '../components/footer';
-import HomeContent from '../pages/home';
+import HomeContent from '../views/home';
 
 export default function Page() {
-  return (
-    <>
-      <Navbar />
-      <HomeContent />
-      <Footer />
-    </>
-  );
+  return <HomeContent />;
 }

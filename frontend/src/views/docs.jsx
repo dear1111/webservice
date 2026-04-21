@@ -1,8 +1,6 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import "../app/globals.css";
 
 import { 
@@ -12,46 +10,6 @@ import {
   ArrowPathIcon,
   DocumentDuplicateIcon 
 } from '@heroicons/react/24/outline';
-
-// --- นำโค้ด Navbar มาวางไว้ที่นี่เพื่อป้องกัน Error จากการหาไฟล์ไม่เจอ ---
-const Navbar = () => {
-  const pathname = usePathname();
-  const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Pricing', href: '/pricing' },
-    { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Docs', href: '/docs' },
-    { name: 'Support', href: '/support' },
-  ];
-  
-  return (
-    <nav className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-white sticky top-0 z-50">
-      <div className="flex items-center space-x-2">
-        <div className="w-9 h-9 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] rounded-md flex items-center justify-center font-bold text-black shadow-sm">O</div>
-        <span className="font-bold text-lg text-[#0B152A]">Aurum<span className="text-amber-500">index</span></span>
-      </div>
-      <div className="hidden md:flex space-x-8 text-sm font-medium">
-        {navLinks.map((link) => (
-          <Link
-            key={link.name}
-            href={link.href}
-            className={`transition-colors font-bold ${
-              pathname === link.href ? 'text-amber-500' : 'text-gray-600 hover:text-black'
-            }`}
-          >
-            {link.name}
-          </Link>
-        ))}
-      </div>
-      <div className="flex items-center space-x-4">
-        <button className="text-xs font-semibold text-gray-600">Sign in</button>
-        <button className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] text-gray-800 px-4 py-2 rounded-md text-xs font-bold shadow-sm">
-          Get API key
-        </button>
-      </div>
-    </nav>
-  );
-};
 
 // --- คอมโพเนนต์หน้า Docs หลัก ---
 const Docs = () => {
@@ -82,13 +40,11 @@ const Docs = () => {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-900">
-      {/* เรียกใช้ Navbar ที่อยู่ด้านบน */}
-      <Navbar />
 
-      <main className="max-w-5xl mx-auto px-6 py-16">
+      <main className="max-w-4xl mx-auto px-6 py-16">
         {/* Header Section */}
         <div className="mb-12 text-left">
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold uppercase tracking-wider mb-6">
+          <span className="inline-flex items-center px-2 py-1 rounded-full bg-amber-50 border border-amber-200 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] bg-clip-text text-transparent text-[10px] font-bold uppercase tracking-wider mb-6">
             Documentation
           </span>
           <h1 className="text-5xl font-bold text-[#0B152A] mb-4 tracking-tight">
@@ -147,40 +103,6 @@ const Docs = () => {
           </div>
         </div>
       </main>
-
-      {/* Footer Section */}
-      <footer className="bg-[#050F1F] text-slate-400 py-16 px-8 border-t border-slate-800">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 text-left">
-          <div className="col-span-1">
-            <div className="flex items-center gap-2 mb-6 text-white">
-              <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center font-bold text-black shadow-sm">A</div>
-              <span className="font-bold text-xl tracking-tight">AurumIndex</span>
-            </div>
-            <p className="text-[13px] leading-relaxed text-slate-400 max-w-[240px]">
-              The institutional-grade Gold Market Index & API provider for developers, analysts and shops.
-            </p>
-          </div>
-          
-          {[
-            { title: 'Product', links: ['Pricing', 'Dashboard', 'Market Sentiment'] },
-            { title: 'Developers', links: ['Documentation', 'API Reference', 'Status'] },
-            { title: 'Company', links: ['API Support', 'Terms', 'Privacy'] },
-          ].map((col) => (
-            <div key={col.title}>
-              <h4 className="text-amber-500 text-sm font-bold mb-6 uppercase tracking-wider">{col.title}</h4>
-              <ul className="text-[13px] space-y-4">
-                {col.links.map(link => (
-                  <li key={link} className="hover:text-white cursor-pointer transition-colors text-slate-400">{link}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="max-w-6xl mx-auto mt-20 pt-8 border-t border-slate-800/50 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-medium tracking-tight text-slate-500">
-          <p>© 2026 AurumIndex Co., Ltd. — All gold prices are reference data.</p>
-          <p className="hover:text-slate-300 transition-colors uppercase tracking-widest">Index data licensed by LBMA partners.</p>
-        </div>
-      </footer>
     </div>
   );
 };
