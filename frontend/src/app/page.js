@@ -1,5 +1,5 @@
-import HomeContent from '../views/home';
+import Home from "@/views/home";
 
 export default function Page() {
-  return <HomeContent />;
+  return <Home />;
 }

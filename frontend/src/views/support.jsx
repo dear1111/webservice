@@ -26,7 +26,7 @@ const SupportPage = () => {
             Support
           </span>
           <h1 className="text-5xl font-bold text-[#0B152A] mb-4 tracking-tight">
-            We've got your back
+            <p>We&apos;ve got your back</p>
           </h1>
           <p className="text-lg text-slate-500 max-w-2xl">
             From quick questions to enterprise integration help — pick the channel that fits.

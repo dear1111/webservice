@@ -88,14 +88,14 @@ const Docs = () => {
               <pre>
                 <code>
                   <span className="text-slate-500">curl https://api.aurumindex.io/v1/spot \</span>{"\n"}
-                  <span className="text-slate-500">  -H "Authorization: Bearer ai_live_..." \</span>{"\n"}
-                  <span className="text-slate-500">  -H "Accept: application/json"</span>{"\n\n"}
+                  <span className="text-slate-500">  -H &quot;Authorization: Bearer ai_live_...&quot; \</span>{"\n"}
+                  <span className="text-slate-500">  -H &quot;Accept: application/json&quot;</span>{"\n\n"}
                   <span className="text-amber-400"># Response</span>{"\n"}
                   {"{"}{"\n"}
-                  {"  "}<span className="text-sky-400">"symbol"</span>: <span className="text-amber-200">"XAUTHB"</span>,{"\n"}
-                  {"  "}<span className="text-sky-400">"price"</span>: <span className="text-amber-200">2398.40</span>,{"\n"}
-                  {"  "}<span className="text-sky-400">"spread"</span>: <span className="text-amber-200">8</span>,{"\n"}
-                  {"  "}<span className="text-sky-400">"ts"</span>: <span className="text-amber-200">"2025-04-18T08:01:23Z"</span>{"\n"}
+                  {"  "}<span className="text-sky-400">&quot;symbol&quot;</span>: <span className="text-amber-200">&quot;XAUTHB&quot;</span>,{"\n"}
+                  {"  "}<span className="text-sky-400">&quot;price&quot;</span>: <span className="text-amber-200">2398.40</span>,{"\n"}
+                  {"  "}<span className="text-sky-400">&quot;spread&quot;</span>: <span className="text-amber-200">8</span>,{"\n"}
+                  {"  "}<span className="text-sky-400">&quot;ts&quot;</span>: <span className="text-amber-200">&quot;2025-04-18T08:01:23Z&quot;</span>{"\n"}
                   {"}"}
                 </code>
               </pre>
