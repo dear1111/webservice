@@ -55,32 +55,44 @@ const Dashboard = () => {
         {/* Main */}
         <main className="flex-1 space-y-8">
           {activeTab === 'Overview' && (
-            <>
-              <header>
-                <h1 className="text-3xl font-bold text-[#0B152A]">Overview</h1>
-                <p className="text-slate-500">Welcome back, check your service health below.</p>
-              </header>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[ { label: 'Calls Today', value: '450', icon: ChartBarIcon }, { label: 'Latency', value: '187ms', icon: ArrowTrendingUpIcon }, { label: 'Active Keys', value: apiKeys.length, icon: KeyIcon }, { label: 'Uptime', value: '99.9%', icon: ShieldCheckIcon } ].map((s) => (
-                  <div key={s.label} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                    <s.icon className="w-6 h-6 text-yellow-500 mb-4" />
-                    <p className="text-[10px] text-slate-400 uppercase">{s.label}</p>
-                    <p className="text-2xl font-bold">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData}>
-                    <XAxis dataKey="time" />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="actual" fill="#EAB308" stroke="#EAB308" />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            </>
-          )}
+  <>
+    <header>
+      <h1 className="text-3xl font-bold text-[#0B152A]">Overview</h1>
+      <p className="text-slate-500">Welcome back, check your service health below.</p>
+    </header>
 
+    {/* ใส่ div ครอบ Grid ให้ถูกต้อง */}
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {[ 
+        { label: 'Calls Today', value: '450', icon: ChartBarIcon }, 
+        { label: 'Latency', value: '187ms', icon: ArrowTrendingUpIcon }, 
+        { label: 'Active Keys', value: apiKeys.length, icon: KeyIcon }, 
+        { label: 'Uptime', value: '99.9%', icon: ShieldCheckIcon } 
+      ].map((s) => (
+        <div key={s.label} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <s.icon className="w-6 h-6 text-yellow-500 mb-4" />
+          <p className="text-[10px] text-slate-800 font-bold uppercase tracking-wider">
+            {s.label}
+          </p>
+          <p className="text-2xl font-bold text-black mt-1">
+            {s.value}
+          </p>
+        </div>
+      ))}
+    </div> {/* ปิด div ของ Grid ตรงนี้สำคัญมาก */}
+
+    {/* กราฟควรอยู่แยกออกมาเป็นอีกบล็อกด้านล่าง */}
+    <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[350px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={chartData}>
+          <XAxis dataKey="time" />
+          <Tooltip />
+          <Area type="monotone" dataKey="actual" fill="#EAB308" stroke="#EAB308" />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  </>
+)}
           {activeTab === 'API Keys' && (
             <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
               <div className="flex justify-between items-center mb-8">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link'; // เพิ่ม Link เข้ามา
+import Link from 'next/link'; 
 import { 
   CheckIcon, 
   CodeBracketIcon, 
@@ -10,11 +10,12 @@ import {
 } from '@heroicons/react/24/outline';
 import "../app/globals.css";
 
-// --- Pricing Page Component ---
 const PricingPage = () => {
+  // สไตล์ animation ที่ใช้ร่วมกัน
+  const cardHoverStyle = "transition-all duration-300 ease-out hover:-translate-y-3 hover:shadow-2xl";
+
   return (
     <main className="bg-white flex-grow max-w-full mx-auto px-0 py-16 md:py-24 text-center">
-        {/* Pricing Section */}
         <section className="pt-8 px-4 bg-white font-sans text-slate-900">
         <div className="max-w-3xl mx-auto text-center mb-12">
             <div className="inline-block px-4 py-1 rounded-full border border-yellow-200 text-yellow-600 text-xs font-medium mb-3 ">
@@ -28,11 +29,10 @@ const PricingPage = () => {
             </p>
         </div>
 
-        {/* Pricing Cards Grid */}
         <div className="max-w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
             
             {/* Card 1: Free Tier */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 flex flex-col shadow-sm hover:shadow-md transition-shadow">
+            <div className={`bg-white rounded-2xl border border-slate-200 p-8 flex flex-col shadow-sm ${cardHoverStyle}`}>
             <div className="flex items-center space-x-2 mb-6">
                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-bold">
                     <CodeBracketIcon className="w-5 h-5 text-gray-800 shrink-0"/>
@@ -65,7 +65,7 @@ const PricingPage = () => {
             </div>
 
             {/* Card 2: Plus Tier */}
-            <div className="bg-white rounded-2xl border-1 border-yellow-400 p-8 flex flex-col relative shadow-xl transform md:-translate-y-2">
+            <div className={`bg-white rounded-2xl border-2 border-yellow-400 p-8 flex flex-col relative shadow-xl transform md:-translate-y-2 ${cardHoverStyle} hover:-translate-y-5`}>
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] text-gray-800 text-xs font-semibold px-3 py-1 rounded-lg shadow-sm">
                 Most popular
             </div>
@@ -103,7 +103,7 @@ const PricingPage = () => {
             </div>
 
             {/* Card 3: Pro Tier */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 flex flex-col shadow-sm hover:shadow-md transition-shadow">
+            <div className={`bg-white rounded-2xl border border-slate-200 p-8 flex flex-col shadow-sm ${cardHoverStyle}`}>
             <div className="flex items-center space-x-4 mb-6">
                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-600">
                     <TrophyIcon className="w-5 h-5 text-gray-800 shrink-0 font-bold"/>
