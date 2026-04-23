@@ -88,7 +88,7 @@ const Home = () => {
   return (
     <div className="flex flex-col">
       {/* 1. Hero Section (จากภาพแรก) */}
-      <section className="bg-gradient-to-br from-[#050F1F] to-[#0A1D3A] text-white pt-26 pb-16 px-4">
+      <section className="bg-linear-to-br from-[#050F1F] to-[#0A1D3A] text-white pt-26 pb-16 px-4">
         <div className="absolute inset-0 opacity-5 bg-[url('/images/pexels-rudonni-7114280.jpg')] bg-cover bg-center z-0"></div>
         <div className="max-w-full mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center z-10 relative">
           <div className="space-y-5 py-4">
@@ -100,7 +100,7 @@ const Home = () => {
             >
               Live · LBMA-aligned
             </p>
-            <h1 className="text-6xl font-bold leading-tight">
+            <h1 className="text-6xl font-bold leading-tight\">
               The Gold Market
               <br />
               <span className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] bg-clip-text text-transparent">
@@ -126,7 +126,7 @@ const Home = () => {
               </Link>
             </div>
             <div className="max-w-full mx-auto border-t border-gray-700 py-10 mt-10">
-              <div className="flex justify-between">
+              <div className="flex space-between">
                 <div className="flex-1">
                   <p className="text-2xl bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] bg-clip-text text-transparent font-bold">
                     &lt; 1s
@@ -183,7 +183,7 @@ const Home = () => {
                     </linearGradient>
                   </defs>
 
-                  {/* แกน X (เวลา) */}
+                  {/* แกน X (เวลา) กำหนดให้โชว์แค่บางช่วง (ticks) เพื่อไม่ให้รกเกินไป แม้จะมีข้อมูล 24 ตัว */}
                   <XAxis
                     dataKey="time"
                     axisLine={false}
@@ -259,7 +259,7 @@ const Home = () => {
 
       <section className="py-10 px-4 bg-white font-sans text-slate-900">
         <div className="max-w-full text-center">
-          <ul className="flex justify-between font-semibold text-slate-500 space-x-10">
+          <ul className="flex space-between font-semibold text-slate-500 space-x-10">
             <li className="flex-1 text-sm">LBMA-ALIGNED</li>
             <li className="flex-1 text-sm">SOC 2 READY</li>
             <li className="flex-1 text-sm">WEBSOCKET & REST</li>
@@ -760,7 +760,7 @@ const Home = () => {
       </section>
 
       {/* 5. CTA Section ก่อนเข้า Footer */}
-      <section className="bg-gradient-to-br from-[#07162D] to-[#0D2445] py-24 flex justify-center items-center text-white">
+      <section className="bg-linear-to-br from-[#07162D] to-[#0D2445] py-24 flex justify-center items-center text-white">
         <div className="max-w-3xl text-center">
             <h2 className="text-4xl font-bold mb-2">
                 Build the next generation of gold-market apps

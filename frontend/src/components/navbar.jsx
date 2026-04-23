@@ -53,7 +53,7 @@ const Navbar = () => {
       {/* Action Buttons */}
       <div className="flex items-center space-x-4">
         <Link
-          href="/signin"
+          href="/login"
           className="text-xs font-semibold text-gray-600 hover:bg-[#D99A1F] transition-colors"
         >
           Sign in
