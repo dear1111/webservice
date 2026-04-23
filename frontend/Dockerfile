@@ -1,32 +1,18 @@
-# Stage 1: Install dependencies
-FROM node:20-alpine AS deps
+# ใช้ Node.js เวอรชัน 20 (ตามที่เพื่อนคุณตั้งไว้)
+FROM node:20-alpine
+
 WORKDIR /app
+
+# ก๊อปปี้แค่ไฟล์ package มาก่อน
 COPY package*.json ./
+
+# ติดตั้ง dependencies ให้ครบ (จะได้มีคำสั่ง next ให้ใช้)
 RUN npm install
 
-# Stage 2: Build the app
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# ก๊อปปี้ไฟล์โค้ดทั้งหมดตามมา
 COPY . .
-# Next.js จะจัดการ Tailwind CSS ให้ตอน Build อัตโนมัติ
-RUN npm run build
-
-# Stage 3: Runner (Production)
-FROM node:20-alpine AS runner
-WORKDIR /app
-
-ENV NODE_ENV=production
-
-# ก๊อปปี้เฉพาะไฟล์ที่จำเป็นจริงๆ จากการทำ standalone output
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
 
-# รัน Next.js server
-CMD ["node", "server.js"]
-
-# docker build -t frontend .
-# docker run -p 4000:3000 frontend
+# รันโหมด Dev เพื่อให้เราแก้โค้ดแล้วเว็บรีเฟรชเอง (Hot Reload)
+CMD ["npm", "run", "dev"]
