@@ -16,6 +16,7 @@ const Login = () => {
 
   // State ใหม่ตามสเต็ป A
   const [errorMessage, setErrorMessage] = useState(''); 
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSuccessLoading, setIsSuccessLoading] = useState(false); 
 
   const handleSubmit = async (e) => {
@@ -34,7 +35,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://shiny-space-winner-vprp94qgjxvcpv4r-5000.app.github.dev/api';
 
       if (isForgotMode) {
         // --- โหมดลืมรหัสผ่าน ---
@@ -51,12 +52,14 @@ const Login = () => {
           setPassword(''); 
           setConfirmPassword('');
           setErrorMessage(''); 
+          setSuccessMessage("");
           // แอบใส่ข้อความสีเขียวได้นิดหน่อย แต่ตอนนี้เราใช้แดงเป็นหลัก เลยปล่อยผ่านไปก่อน
         } else {
           // ไม่สำเร็จ: แจ้ง error และเคลียร์ช่องรหัส
           setErrorMessage(data.error);
           setPassword('');
           setConfirmPassword('');
+          setSuccessMessage("");
         }
       } else if (isLogin) {
         // --- โหมด Login ---
@@ -77,6 +80,7 @@ const Login = () => {
           // ไม่สำเร็จ: แจ้งเตือนและเคลียร์ช่องรหัสผ่าน
           setErrorMessage(`เข้าสู่ระบบไม่ได้: ${data.error}`);
           setPassword('');
+          setSuccessMessage("");
         }
 
       } else {
@@ -90,15 +94,18 @@ const Login = () => {
         const data = await response.json();
 
         if (response.ok) {
-          // สมัครสำเร็จ เด้งกลับไปหน้า Login อัตโนมัติ (หรือจะเปิดหน้า Loading เลยก็ได้)
-          setIsSuccessLoading(true);
-          localStorage.setItem('user', JSON.stringify({ email: email })); // แอบล็อกอินให้เลย
-          window.location.href = '/dashboard';
+          // ✅ สมัครสำเร็จ: แจ้งเตือน และสลับโหมดกลับมาเป็น Login ทันที!
+          setSuccessMessage("Registration successful! Please sign in.");
+          setIsLogin(true); // สลับกลับมาหน้า Login
+          setPassword(''); // ล้างช่องรหัสผ่านให้กรอกใหม่
+          setConfirmPassword(''); // ล้างช่องยืนยันรหัสผ่าน
+          setErrorMessage(''); // เคลียร์ Error (ถ้ามี)
         } else {
           // ไม่สำเร็จ: แจ้งเตือนและเคลียร์รหัส
           setErrorMessage(`สมัครไม่สำเร็จ: ${data.error}`);
           setPassword('');
           setConfirmPassword('');
+          setSuccessMessage("");
         }
       }
     } catch (error) {
@@ -192,6 +199,12 @@ const Login = () => {
           {errorMessage && (
             <div className="text-red-500 text-xs font-bold text-center mt-2 animate-fade-up bg-red-50 p-2 rounded-lg border border-red-100">
               {errorMessage}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="text-emerald-600 text-xs font-bold text-center mt-2 animate-fade-up bg-emerald-50 p-2 rounded-lg border border-emerald-100">
+              {successMessage}
             </div>
           )}
 

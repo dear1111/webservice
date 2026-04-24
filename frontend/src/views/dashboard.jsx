@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import {
@@ -17,6 +17,7 @@ const chartData = [
 
 const Dashboard = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isChecking, setIsChecking] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
   // const [apiKeys, setApiKeys] = useState([
@@ -25,19 +26,35 @@ const Dashboard = () => {
   // ]);
   const [apiKeys, setApiKeys] = useState([]);
   const [liveChartData, setLiveChartData] = useState(chartData);
+  const getPlanDetails = (planId) => {
+    // สมมติว่าดึง plan_id มาจาก user ใน localStorage (ถ้ายังไม่มีข้อมูล ให้ default เป็น 1)
+    const id = Number(planId) || 1;
+
+    if (id === 3) return { name: 'Pro Tier 🏆', badge: 'bg-purple-100 text-purple-700' };
+    if (id === 2) return { name: 'Plus Tier ⚡', badge: 'bg-[#F6C65B]/20 text-[#D99A1F]' };
+    return { name: 'Free Tier 💡', badge: 'bg-slate-100 text-slate-700' };
+  };
+
+  // สมมติว่าดึงค่ามาจาก localStorage (ตอนใช้งานจริง Backend ต้องส่ง plan_id มาพร้อมตอน Login)
+  const [userPlan, setUserPlan] = useState({ name: 'Loading...', badge: 'bg-slate-100 text-slate-700' });
 
   useEffect(() => {
-    // เช็คว่ามี user ไหม
     const savedUser = localStorage.getItem('user');
     if (!savedUser) {
-      // ถ้าไม่มี เตะกลับไปหน้า Login
       router.push('/login');
     } else {
-      // ถ้ามี ให้ผ่านได้ (ปิดโหมดเช็ค)
+      // 🌟 ดึงข้อมูลจาก LocalStorage มาแปลงเป็น Object
+      const parsedUser = JSON.parse(savedUser);
+
+      // 🌟 เอา plan_id จากที่ User ซื้อ มาเช็กกับฟังก์ชัน getPlanDetails (ถ้าไม่มีให้เป็น 1)
+      const currentPlanDetails = getPlanDetails(parsedUser.plan_id || 1);
+
+      // 🌟 อัปเดต State ให้โชว์ Plan ปัจจุบัน
+      setUserPlan(currentPlanDetails);
+
       setIsChecking(false);
     }
   }, [router]);
-
   useEffect(() => {
     const fetchRealGoldPrice = async () => {
       try {
@@ -50,7 +67,7 @@ const Dashboard = () => {
           const date = new Date(item[0]); // item[0] คือเวลา (Timestamp)
           const hours = date.getHours().toString().padStart(2, '0');
           const minutes = date.getMinutes().toString().padStart(2, '0');
-          
+
           const pricePerOunceTHB = item[1];
           const pricePerThaiBaht = pricePerOunceTHB * (15.244 / 31.10348);
 
@@ -85,15 +102,15 @@ const Dashboard = () => {
         // 1. ดึงข้อมูล User ออกมาก่อน เพื่อให้รู้ว่าต้องขอดู Key ของใคร
         const savedUserString = localStorage.getItem('user');
         if (!savedUserString) return; // ถ้าไม่ได้ล็อกอิน ก็ข้ามไป
-        
+
         const savedUser = JSON.parse(savedUserString);
         if (!savedUser.id) return; // กันเหนียว ถ้ายูสเซอร์ไม่มี id
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://shiny-space-winner-vprp94qgjxvcpv4r-5000.app.github.dev/api';
+
         // 2. ยิงไปที่ Backend เพื่อขอข้อมูล (สังเกตว่าเราต่อ /รหัสยูสเซอร์ ไปใน URL ด้วย)
         const response = await fetch(`${apiUrl}/keys/${savedUser.id}`);
-        
+
         if (response.ok) {
           const keysFromDB = await response.json();
           // 3. เอาข้อมูลจริงที่ได้ อัปเดตใส่ State
@@ -108,6 +125,15 @@ const Dashboard = () => {
 
     fetchApiKeys(); // สั่งให้ทำงาน
   }, []); // [] หมายถึงทำแค่ครั้งเดียวตอนโหลดหน้า
+
+  // useEffect สำหรับเช็คว่ามี ?tab=... ส่งมาใน URL ไหม
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    // ถ้ามีส่งมา และชื่อตรงกับ Tab ที่เรามี ก็สลับให้เลย
+    if (tabFromUrl && ['Overview', 'API Keys', 'Usage Metrics'].includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   // ระหว่างที่คอมพิวเตอร์กำลังคิด ขอโชว์หน้าจอขาวๆ หรือ Loading ไปก่อน จะได้ไม่ Error
   if (isChecking) {
@@ -133,7 +159,7 @@ const Dashboard = () => {
       const keyName = `Service Key ${apiKeys.length + 1}`;
 
       // 3. ยิงไปให้ Backend สุ่มรหัสและบันทึกลง DB
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://shiny-space-winner-vprp94qgjxvcpv4r-5000.app.github.dev/api';
       const response = await fetch(`${apiUrl}/keys`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -149,6 +175,23 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error("เกิดข้อผิดพลาด:", error);
+    }
+  };
+
+  const handleCancelPlan = () => {
+    // ถามเพื่อความชัวร์
+    if (window.confirm("Are you sure you want to cancel your current plan and return to Free Tier?")) {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        const userObj = JSON.parse(storedUser);
+        userObj.plan_id = 1; // 🌟 ปรับกลับเป็น Free Tier
+        userObj.plan_name = "Free Tier";
+        localStorage.setItem('user', JSON.stringify(userObj));
+
+        // 🌟 อัปเดต State ทันทีเพื่อให้หน้าเว็บเปลี่ยนเลยโดยไม่ต้องรีเฟรช
+        setUserPlan(getPlanDetails(1));
+        alert("Your plan has been successfully canceled.");
+      }
     }
   };
 
@@ -180,7 +223,24 @@ const Dashboard = () => {
               <header>
                 <h1 className="text-3xl font-bold text-[#0B152A]">Overview</h1>
                 <p className="text-slate-500">Welcome back, check your service health below.</p>
+                {/* ป้ายบอกสถานะแพ็กเกจ (Plan Badge) */}
+                <div className={`flex items-center justify-between px-5 py-3 rounded-2xl shadow-sm ${userPlan.badge}`}>
+                  <span className="text-sm font-bold">
+                    Current Plan: {userPlan.name}
+                  </span>
+
+                  {/* ถ้าไม่ใช่ Free Tier ถึงจะโชว์ปุ่ม Cancel ทางด้านขวา */}
+                  {userPlan.name !== 'Free Tier 💡' && (
+                    <button
+                      onClick={handleCancelPlan}
+                      className="text-xs font-bold text-red-500 hover:text-white hover:bg-red-500 bg-white px-4 py-2 rounded-xl border border-red-200 hover:border-red-500 transition-all cursor-pointer"
+                    >
+                      Cancel Plan
+                    </button>
+                  )}
+                </div>
               </header>
+
 
               {/* ใส่ div ครอบ Grid ให้ถูกต้อง */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -203,13 +263,41 @@ const Dashboard = () => {
               </div> {/* ปิด div ของ Grid ตรงนี้สำคัญมาก */}
 
               {/* กราฟควรอยู่แยกออกมาเป็นอีกบล็อกด้านล่าง */}
-              <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={liveChartData}>
-                    <XAxis dataKey="time" />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="actual" fill="#EAB308" stroke="#EAB308" />
-                    <Line type="monotone" dataKey="projected" stroke="#94a3b8" strokeDasharray="5 5" dot={false} />
+              <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[400px] shadow-sm">
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-[#0B152A]">Live Gold Price </h3>
+                  <p className="text-xs text-slate-400">Real-time market chart (THB / Baht weight)</p>
+                </div>
+                <ResponsiveContainer width="100%" height="83%">
+                  <ComposedChart data={liveChartData} margin={{ top: 10, right: 10, left: 30, bottom: 0 }}>
+                    {/* เพิ่ม defs สำหรับไล่สี Area ให้ดูพรีเมียม */}
+                    <defs>
+                      <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F6C65B" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#F6C65B" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+
+                    <XAxis dataKey="time" stroke="#000000" fontSize={12} tickLine={false} axisLine={false} padding={{ left: 20, right: 20 }} tickMargin={10} />
+
+                    {/* 🌟 พระเอกอยู่ตรงนี้: ทำให้แกน Y ซูมเข้าไปที่ราคาจริงๆ ไม่เริ่มจาก 0 */}
+                    <YAxis
+                      domain={['dataMin - 100', 'dataMax + 100']}
+                      stroke="#000000"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={10}
+                      tickFormatter={(value) => `฿${value.toLocaleString()}`}
+                    />
+
+                    <Tooltip
+                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                      labelStyle={{ fontWeight: 'bold', color: '#0B152A' }}
+                    />
+
+                    <Area type="monotone" dataKey="actual" fill="url(#colorActual)" stroke="#D99A1F" strokeWidth={3} />
+                    <Line type="monotone" dataKey="projected" stroke="#94a3b8" strokeDasharray="5 5" strokeWidth={2} dot={false} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>

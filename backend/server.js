@@ -24,6 +24,7 @@ const initDb = async () => {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        plan_id int DEFALUT 1;
       );
     `);
     await pool.query(`
@@ -166,6 +167,59 @@ app.get('/api/keys/:userId', async (req, res) => {
 
 app.get('/api/pricing', (req, res) => {
   res.json({ message: "ระบบราคาทองกำลังก่อสร้างจ้า!" });
+});
+
+app.get('/api/gold-prices', async (req, res) => {
+  const apiKey = req.header('x-api-key');
+
+  if (!apiKey) {
+    return res.status(401).json({ error: "กรุณาแนบ API Key ใน Header (x-api-key)" });
+  }
+
+  try {
+    const keyResult = await pool.query('SELECT * FROM api_keys WHERE key = $1', [apiKey]);
+
+    if (keyResult.rows.length === 0) {
+      return res.status(401).json({ error: "API Key ไม่ถูกต้อง" });
+    }
+
+    // อัปเดตยอดการใช้งาน +1
+    await pool.query('UPDATE api_keys SET usage = usage + 1 WHERE key = $1', [apiKey]);
+
+    // ส่งข้อมูลทองจำลองกลับไป
+    res.status(200).json({
+      success: true,
+      message: "ดึงข้อมูลสำเร็จจาก AurumIndex!",
+      data: {
+        buy_price: 40500,
+        sell_price: 40600,
+        currency: "THB",
+        updated_at: new Date().toISOString()
+      }
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" });
+  }
+});
+
+app.put('/api/upgrade-plan', async (req, res) => {
+  const { userId, planId } = req.body; // planId: 1(Free), 2(Plus), 3(Pro)
+  try {
+    const result = await pool.query(
+      'UPDATE users SET plan_id = $1 WHERE id = $2 RETURNING *',
+      [planId, userId]
+    );
+    
+    if (result.rows.length > 0) {
+      res.json({ success: true, user: result.rows[0] });
+    } else {
+      res.status(404).json({ error: "ไม่พบผู้ใช้" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 const port = process.env.PORT || 5000;

@@ -44,7 +44,7 @@ const Navbar = () => {
       </div>
 
       {/* Navigation Links */}
-      <div className="hidden md:flex space-x-8 text-sm font-medium">
+      <div className="hidden md:flex ml-auto mr-116 space-x-8 text-sm font-medium">
         {navLinks.map((link) => {
           // เช็คว่า path ปัจจุบัน ตรงกับ href ของลิงก์นี้หรือไม่
           const isActive = pathname === link.href;
@@ -67,24 +67,37 @@ const Navbar = () => {
       {/* Action Buttons */}
       <div className="flex items-center space-x-4">
         {user ? (
-          // ถ้า Login แล้ว โชว์ชื่อ user และปุ่ม Sign out
-          <>
-            <span className="text-xs font-semibold text-yellow-600">
-              {user.email.split('@')[0]}
-            </span>
+          // ถ้า Login แล้ว โชว์ Profile Box, Sign out และ Get API key
+          <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
+            {/* กล่อง User Profile */}
+            <div className="flex items-center gap-2 bg-gray-50 py-1 px-2 rounded-full border border-gray-200">
+              <div className="w-7 h-7 bg-gradient-to-br from-[#0B152A] to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-inner uppercase">
+                {user.email ? user.email.charAt(0) : 'U'}
+              </div>
+              <div className="flex flex-col pr-2">
+                <span className="text-xs font-bold text-slate-800 leading-none">
+                  {user.email.split('@')[0]}
+                </span>
+                <span className="text-[9px] font-medium text-amber-600 mt-0.5">
+                  {user.plan_name || 'Free Tier'}
+                </span>
+              </div>
+            </div>
+
             <button
               onClick={handleSignOut}
-              className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+              className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
             >
               Sign out
             </button>
-            <Link href="/pricing"
+
+            <Link href="/dashboard?tab=API+Keys"
               className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-90 transition-all shadow-md shadow-[#D99A1F]/50 text-gray-800 px-3 py-2 rounded-md font-semibold text-[11px] inline-block text-center">
               Get API key
             </Link>
-          </>
+          </div>
         ) : (
-          // ถ้ายังไม่ Login โชว์ Sign in เหมือนเดิม
+          // ถ้ายังไม่ Login โชว์ Sign in กับ Get API key เหมือนเดิม
           <>
             <Link href="/login" className="text-xs font-semibold text-gray-600 hover:text-black transition-colors">
               Sign in
