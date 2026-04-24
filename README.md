@@ -36,6 +36,7 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 ## Database Tool (Adminer)
+http://localhost:8080/?pgsql=db&username=postgres&db=gold_db&ns=public&select=users
 - URL: http://localhost:8080
 - System: PostgreSQL
 - Server: db
