@@ -1,10 +1,25 @@
 "use client";
 
-import React from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const Navbar = () => {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    // เช็คข้อมูลใน localStorage ตอนหน้าเว็บโหลด
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('user'); // ลบข้อมูลออก
+    setUser(null); // เคลียร์ State
+    window.location.href = '/'; // กลับหน้าแรก
+  };
   // ดึง path ปัจจุบัน (เช่น '/', '/pricing', '/dashboard')
   const pathname = usePathname();
   // สร้าง Array ของเมนูเพื่อให้จัดการโค้ดและเช็คเงื่อนไขได้ง่ายขึ้น
@@ -38,11 +53,10 @@ const Navbar = () => {
             <Link
               key={link.name}
               href={link.href}
-              className={`transition-colors ${
-                isActive
-                  ? "text-yellow-500 font-bold hover:text-black" // สไตล์เมื่อ Active (สีเหลือง ตัวหนา)
-                  : "text-gray-600 font-bold hover:text-black" // สไตล์ปกติ
-              }`}
+              className={`transition-colors ${isActive
+                ? "text-yellow-500 font-bold hover:text-yellow" // สไตล์เมื่อ Active (สีเหลือง ตัวหนา)
+                : "text-gray-600 font-bold hover:text-black" // สไตล์ปกติ
+                }`}
             >
               {link.name}
             </Link>
@@ -52,18 +66,35 @@ const Navbar = () => {
 
       {/* Action Buttons */}
       <div className="flex items-center space-x-4">
-        <Link
-          href="/login"
-          className="text-xs font-semibold text-gray-600 hover:bg-[#D99A1F] transition-colors"
-        >
-          Sign in
-        </Link>
-
-        <Link href="/pricing"
-          className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:bg-yellow-500 shadow-md shadow-[#D99A1F]/50 text-gray-800 px-3 py-2 rounded-md font-semibold text-[11px] inline-block text-center"
-        >
-          Get API key
-        </Link>
+        {user ? (
+          // ถ้า Login แล้ว โชว์ชื่อ user และปุ่ม Sign out
+          <>
+            <span className="text-xs font-semibold text-yellow-600">
+              {user.email.split('@')[0]}
+            </span>
+            <button
+              onClick={handleSignOut}
+              className="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+            >
+              Sign out
+            </button>
+            <Link href="/pricing"
+              className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-90 transition-all shadow-md shadow-[#D99A1F]/50 text-gray-800 px-3 py-2 rounded-md font-semibold text-[11px] inline-block text-center">
+              Get API key
+            </Link>
+          </>
+        ) : (
+          // ถ้ายังไม่ Login โชว์ Sign in เหมือนเดิม
+          <>
+            <Link href="/login" className="text-xs font-semibold text-gray-600 hover:text-black transition-colors">
+              Sign in
+            </Link>
+            <Link href="/pricing"
+              className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-90 transition-all shadow-md shadow-[#D99A1F]/50 text-gray-800 px-3 py-2 rounded-md font-semibold text-[11px] inline-block text-center">
+              Get API key
+            </Link>
+          </>
+        )}
       </div>
     </nav>
   );

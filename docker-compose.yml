@@ -50,6 +50,17 @@ services:
       - ./frontend:/app
       - /app/node_modules
       - /app/.next
+  
+  adminer:
+    image: adminer
+    container_name: gold_adminer
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
 
 volumes:
   pgdata:
+  
+  
