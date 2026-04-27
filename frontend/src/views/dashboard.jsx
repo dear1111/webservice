@@ -20,12 +20,10 @@ const Dashboard = () => {
   const searchParams = useSearchParams();
   const [isChecking, setIsChecking] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
-  // const [apiKeys, setApiKeys] = useState([
-  //   { id: 1, name: 'Production Key', key: 'ai_live_8f92a4b1c3d5...', created: 'Oct 12, 2025', usage: 850 },
-  //   { id: 2, name: 'Testing Key', key: 'ai_test_2a9b4c1d8f7e...', created: 'Nov 01, 2025', usage: 120 }
-  // ]);
   const [apiKeys, setApiKeys] = useState([]);
+  const [copiedId, setCopiedId] = useState(null);
   const [liveChartData, setLiveChartData] = useState(chartData);
+  const totalUsage = apiKeys.reduce((sum, key) => sum + (key.usage || 0), 0);
   const getPlanDetails = (planId) => {
     // สมมติว่าดึง plan_id มาจาก user ใน localStorage (ถ้ายังไม่มีข้อมูล ให้ default เป็น 1)
     const id = Number(planId) || 1;
@@ -99,32 +97,31 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchApiKeys = async () => {
       try {
-        // 1. ดึงข้อมูล User ออกมาก่อน เพื่อให้รู้ว่าต้องขอดู Key ของใคร
         const savedUserString = localStorage.getItem('user');
-        if (!savedUserString) return; // ถ้าไม่ได้ล็อกอิน ก็ข้ามไป
-
+        if (!savedUserString) return;
         const savedUser = JSON.parse(savedUserString);
-        if (!savedUser.id) return; // กันเหนียว ถ้ายูสเซอร์ไม่มี id
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://shiny-space-winner-vprp94qgjxvcpv4r-5000.app.github.dev/api';
-
-        // 2. ยิงไปที่ Backend เพื่อขอข้อมูล (สังเกตว่าเราต่อ /รหัสยูสเซอร์ ไปใน URL ด้วย)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
         const response = await fetch(`${apiUrl}/keys/${savedUser.id}`);
 
         if (response.ok) {
           const keysFromDB = await response.json();
-          // 3. เอาข้อมูลจริงที่ได้ อัปเดตใส่ State
           setApiKeys(keysFromDB);
-        } else {
-          console.error("ดึงข้อมูล API Keys ไม่สำเร็จ");
         }
       } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการดึง API Keys:", error);
+        console.error("Polling error:", error);
       }
     };
 
-    fetchApiKeys(); // สั่งให้ทำงาน
-  }, []); // [] หมายถึงทำแค่ครั้งเดียวตอนโหลดหน้า
+    // ดึงข้อมูลครั้งแรกทันที
+    fetchApiKeys();
+
+    // 🌟 ตั้งเวลาให้ดึงใหม่ทุกๆ 5 วินาที (5000ms)
+    const interval = setInterval(fetchApiKeys, 5000);
+
+    // 🌟 สำคัญมาก: ต้องล้าง interval ทิ้งเมื่อปิดหน้าเว็บ ไม่งั้นเครื่องจะค้าง
+    return () => clearInterval(interval);
+  }, []);
 
   // useEffect สำหรับเช็คว่ามี ?tab=... ส่งมาใน URL ไหม
   useEffect(() => {
@@ -141,9 +138,14 @@ const Dashboard = () => {
   }
 
 
-  const copyToClipboard = (key) => {
+  const copyToClipboard = (key, id) => {
     navigator.clipboard.writeText(key);
-    alert("API Key copied!");
+    setCopiedId(id); // เก็บ ID ที่ถูกกด
+
+    // 2 วินาทีให้กลับเป็นเหมือนเดิม
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
   };
 
   const generateNewKey = async () => {
@@ -245,7 +247,7 @@ const Dashboard = () => {
               {/* ใส่ div ครอบ Grid ให้ถูกต้อง */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                  { label: 'Calls Today', value: '450', icon: ChartBarIcon },
+                  { label: 'Calls Today', value: totalUsage.toLocaleString(), icon: ChartBarIcon }, // ใช้ totalUsage แทน "450"
                   { label: 'Latency', value: '187ms', icon: ArrowTrendingUpIcon },
                   { label: 'Active Keys', value: apiKeys.length, icon: KeyIcon },
                   { label: 'Uptime', value: '99.9%', icon: ShieldCheckIcon }
@@ -321,19 +323,70 @@ const Dashboard = () => {
                       <td className="p-4 font-bold text-black">{item.name}</td>
                       <td className="p-4 font-mono text-xs text-slate-500">{item.key}</td>
                       <td className="p-4">
-                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-yellow-500" style={{ width: `${(item.usage / 1000) * 100}%` }}></div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            {/* ปรับให้ขยับตาม usage จริง */}
+                            <div
+                              className="h-full bg-yellow-500 transition-all duration-500"
+                              style={{ width: `${Math.min((item.usage / 1000) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                          {/* เพิ่มตัวเลขเข้าไปตรงนี้ */}
+                          <span className="text-[10px] font-bold text-slate-500">
+                            {item.usage?.toLocaleString()} / 1,000
+                          </span>
                         </div>
                       </td>
                       <td className="p-4 text-right">
-                        <button onClick={() => copyToClipboard(item.key)} className="text-amber-600 font-bold text-xs flex items-center justify-end gap-1">
-                          <DocumentDuplicateIcon className="w-4 h-4" /> Copy
+                        <button
+                          onClick={() => copyToClipboard(item.key, item.id)}
+                          className={`flex items-center justify-end gap-2 px-3 py-1.5 rounded-lg font-bold text-xs transition-all duration-200 ${copiedId === item.id
+                              ? "bg-green-100 text-green-600 shadow-sm"
+                              : "text-amber-600 hover:bg-amber-50 active:scale-95"
+                            }`}
+                        >
+                          {copiedId === item.id ? (
+                            <>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                              </svg>
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <DocumentDuplicateIcon className="w-4 h-4" />
+                              Copy
+                            </>
+                          )}
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {activeTab === 'Usage Metrics' && (
+            <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm text-center py-20">
+              <ChartBarIcon className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-black">Usage Statistics</h2>
+              <p className="text-slate-500 max-w-sm mx-auto mt-2">
+                You have used <b>{totalUsage.toLocaleString()}</b> requests out of your 1,000 daily limit.
+              </p>
+              {/* เพิ่มหลอดใหญ่ๆ ให้ดูง่าย */}
+              <div className="max-w-md mx-auto mt-8">
+                <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all duration-1000"
+                    style={{ width: `${(totalUsage / 1000) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between mt-2 text-xs font-bold text-slate-400">
+                  <span>0%</span>
+                  <span>{(totalUsage / 1000 * 100).toFixed(1)}% used</span>
+                  <span>100%</span>
+                </div>
+              </div>
             </div>
           )}
         </main>

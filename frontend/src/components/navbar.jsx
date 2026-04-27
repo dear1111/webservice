@@ -32,30 +32,29 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 bg-gradient-to-br from-white to-gray-100 sticky top-0 z-50">
-      <div className="flex items-center space-x-2">
-        <div className="w-9 h-9 bg-linear-to-br from-[#F6C65B] to-[#D99A1F] rounded-md flex items-center justify-center font-bold text-black">
+    <nav className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-gradient-to-br from-white to-gray-100 sticky top-0 z-50 h-16">
+      {/* --- ส่วนที่ 1: ฝั่งซ้าย (Logo) --- */}
+      <div className="flex items-center gap-3 w-[250px] flex-shrink-0">
+        <div className="w-9 h-9 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] rounded-md flex items-center justify-center font-bold text-black shadow-sm">
           O
         </div>
-
-        <span className="font-bold text-lg text-black">
+        <span className="font-bold text-lg text-black tracking-tight">
           Aurum<span className="text-yellow-500">index</span>
         </span>
       </div>
 
-      {/* Navigation Links */}
-      <div className="hidden md:flex ml-auto mr-116 space-x-8 text-sm font-medium">
+      {/* --- ส่วนที่ 2: ตรงกลาง (Navigation Links) --- */}
+      {/* ใช้ flex-grow และ justify-center เพื่อให้เมนูอยู่กลางเสมอ ไม่ว่าฝั่งซ้ายขวาจะยาวเท่าไหร่ */}
+      <div className="hidden md:flex flex-grow justify-center items-center gap-8 text-sm">
         {navLinks.map((link) => {
-          // เช็คว่า path ปัจจุบัน ตรงกับ href ของลิงก์นี้หรือไม่
           const isActive = pathname === link.href;
-
           return (
             <Link
               key={link.name}
               href={link.href}
-              className={`transition-colors ${isActive
-                ? "text-yellow-500 font-bold hover:text-yellow" // สไตล์เมื่อ Active (สีเหลือง ตัวหนา)
-                : "text-gray-600 font-bold hover:text-black" // สไตล์ปกติ
+              className={`transition-colors whitespace-nowrap ${isActive
+                  ? "text-yellow-500 font-bold"
+                  : "text-gray-600 font-bold hover:text-black"
                 }`}
             >
               {link.name}
@@ -64,49 +63,50 @@ const Navbar = () => {
         })}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center space-x-4">
+      {/* --- ส่วนที่ 3: ฝั่งขวา (Actions) --- */}
+      <div className="flex items-center justify-end gap-4 w-[350px] flex-shrink-0">
         {user ? (
-          // ถ้า Login แล้ว โชว์ Profile Box, Sign out และ Get API key
-          <div className="flex items-center gap-4 pl-4 border-l border-gray-200">
+          <div className="flex items-center gap-4 border-l border-gray-200 pl-4">
             {/* กล่อง User Profile */}
-            <div className="flex items-center gap-2 bg-gray-50 py-1 px-2 rounded-full border border-gray-200">
-              <div className="w-7 h-7 bg-gradient-to-br from-[#0B152A] to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-inner uppercase">
+            <div className="flex items-center gap-2 bg-gray-50 py-1.5 px-3 rounded-full border border-gray-200 min-w-[160px] max-w-[200px]">
+              <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-[#0B152A] to-slate-700 rounded-full flex items-center justify-center text-white font-bold text-[10px] shadow-inner uppercase">
                 {user.email ? user.email.charAt(0) : 'U'}
               </div>
-              <div className="flex flex-col pr-2">
-                <span className="text-xs font-bold text-slate-800 leading-none">
+              <div className="flex flex-col overflow-hidden leading-tight">
+                <span className="text-[11px] font-bold text-slate-800 truncate">
                   {user.email.split('@')[0]}
                 </span>
-                <span className="text-[9px] font-medium text-amber-600 mt-0.5">
+                <span className="text-[8px] font-bold text-amber-600 uppercase tracking-wider">
                   {user.plan_name || 'Free Tier'}
                 </span>
               </div>
             </div>
 
+            {/* Sign out - เพิ่ม whitespace-nowrap กันตัวหนังสือเด้งลงล่าง */}
             <button
               onClick={handleSignOut}
-              className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+              className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors cursor-pointer whitespace-nowrap"
             >
               Sign out
             </button>
 
-            <Link href="/dashboard?tab=API+Keys"
-              className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-90 transition-all shadow-md shadow-[#D99A1F]/50 text-gray-800 px-3 py-2 rounded-md font-semibold text-[11px] inline-block text-center">
+            <Link
+              href="/dashboard?tab=API+Keys"
+              className="w-28 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-95 active:scale-95 transition-all shadow-sm text-gray-800 py-2 rounded-lg font-bold text-[10px] text-center uppercase"
+            >
               Get API key
             </Link>
           </div>
         ) : (
-          // ถ้ายังไม่ Login โชว์ Sign in กับ Get API key เหมือนเดิม
-          <>
-            <Link href="/login" className="text-xs font-semibold text-gray-600 hover:text-black transition-colors">
+          <div className="flex items-center gap-6">
+            <Link href="/login" className="text-xs font-bold text-gray-600 hover:text-black transition-colors whitespace-nowrap">
               Sign in
             </Link>
             <Link href="/pricing"
-              className="bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-90 transition-all shadow-md shadow-[#D99A1F]/50 text-gray-800 px-3 py-2 rounded-md font-semibold text-[11px] inline-block text-center">
+              className="w-28 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-95 active:scale-95 transition-all shadow-sm text-gray-800 py-2 rounded-lg font-bold text-[10px] text-center uppercase">
               Get API key
             </Link>
-          </>
+          </div>
         )}
       </div>
     </nav>
