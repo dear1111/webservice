@@ -8,12 +8,19 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // เช็คข้อมูลใน localStorage ตอนหน้าเว็บโหลด
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // ฟังก์ชันโหลดข้อมูล
+    const loadUser = () => {
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) setUser(JSON.parse(savedUser));
+    };
+
+    loadUser(); // โหลดครั้งแรกตอนเปิดหน้า
+
+    // 🌟 ดักฟัง Event ถ้ามีการเปลี่ยน Plan ให้โหลดใหม่ทันที!
+    window.addEventListener('userUpdated', loadUser);
+    return () => window.removeEventListener('userUpdated', loadUser);
   }, []);
+
 
   const handleSignOut = () => {
     localStorage.removeItem('user'); // ลบข้อมูลออก

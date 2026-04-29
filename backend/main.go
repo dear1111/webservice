@@ -87,16 +87,18 @@ func main() {
 
 	// 3. 🧩 ประกอบร่าง Clean Architecture (Wiring)
 	// สร้าง Repository
-	userRepo := repository.NewUserRepository(db)
-	apiKeyRepo := repository.NewAPIKeyRepository(db)
+	// 3. 🧩 ประกอบร่าง Clean Architecture (Wiring)
+userRepo := repository.NewUserRepository(db)
+apiKeyRepo := repository.NewAPIKeyRepository(db)
 
-	// สร้าง Usecase โดยโยน Repo เข้าไป
-	userUsecase := usecase.NewUserUsecase(userRepo)
-	apiKeyUsecase := usecase.NewAPIKeyUsecase(apiKeyRepo)
+userUsecase := usecase.NewUserUsecase(userRepo)
+apiKeyUsecase := usecase.NewAPIKeyUsecase(apiKeyRepo)
+goldUsecase := usecase.NewGoldUsecase() // 🌟 เพิ่มบรรทัดนี้
 
-	// สร้าง Handler โดยโยน Usecase และตัวแอป app เข้าไปผูก Route
-	http.NewUserHandler(app, userUsecase)
-	http.NewAPIKeyHandler(app, apiKeyUsecase)
+// โยนเข้าไปใน Handler
+http.NewUserHandler(app, userUsecase)
+http.NewAPIKeyHandler(app, apiKeyUsecase)
+http.NewGoldHandler(app, goldUsecase)   // 🌟 เพิ่มบรรทัดนี้ (ใช้ app และ http)
 
 	// Route แถมของเดิมที่มีในระบบ
 	app.Get("/api/pricing", func(c *fiber.Ctx) error {
