@@ -77,8 +77,8 @@ const Navbar = () => {
                   {user.email.split('@')[0]}
                 </span>
                 <span className="text-[8px] font-bold text-amber-600 uppercase tracking-wider">
-                  {user.plan_name || 'Free Tier'}
-                </span>
+  {user.plan_id === 3 ? 'Pro Tier' : user.plan_id === 2 ? 'Plus Tier' : 'Free Tier'}
+</span>
               </div>
             </div>
 
