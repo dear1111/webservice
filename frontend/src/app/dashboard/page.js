@@ -34,8 +34,12 @@ export default function DashboardOverview() {
   const [user, setUser] = useState(null);
   const [activeKeyCount, setActiveKeyCount] = useState(0);
   const [totalUsage, setTotalUsage] = useState(0);
+  
+  // 🌟 เพิ่ม State สำหรับจัดการกราฟ
+  const [timeframe, setTimeframe] = useState("1D");
+  const [dailyData, setDailyData] = useState([]); // เก็บของจริง 1 วันไว้ จะได้ไม่ต้องโหลดใหม่
   const [chartData, setChartData] = useState([]);
-  const [currentPrice, setCurrentPrice] = useState(0); // เก็บราคาล่าสุดเพื่อโชว์
+  const [currentPrice, setCurrentPrice] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -58,7 +62,7 @@ export default function DashboardOverview() {
         }
       } catch (error) { console.error(error); }
 
-      // 2. ข้อมูลกราฟจริง 
+      // 2. ข้อมูลกราฟจริง (1 วัน)
       try {
         const cgRes = await fetch("https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=thb&days=1");
         const cgData = await cgRes.json();
@@ -85,6 +89,7 @@ export default function DashboardOverview() {
           actual: lastPrice,
         });
 
+        setDailyData(formattedData); // เก็บไว้ใน state สำรอง
         setChartData(formattedData);
         setCurrentPrice(lastPrice);
       } catch (error) { console.error(error); }
@@ -92,22 +97,68 @@ export default function DashboardOverview() {
     loadData();
   }, []);
 
+  // 🌟 ฟังก์ชันจัดการตอนเปลี่ยน Timeframe 1 วัน / 1 ปี
+  const handleTimeframeChange = (tf) => {
+    if (tf === "1Y" && user.plan_id < 2) {
+      // ถ้าเป็น Free Tier ให้เด้ง Alert
+      Swal.fire({
+        icon: 'warning',
+        title: 'ฟีเจอร์สำหรับ Plus & Pro',
+        text: 'ดูข้อมูลย้อนหลัง 1 ปีได้เฉพาะแพ็กเกจ Plus และ Pro ขึ้นไปเท่านั้นครับ',
+        confirmButtonColor: '#F6C65B',
+        confirmButtonText: 'รับทราบ'
+      });
+      return;
+    }
+
+    setTimeframe(tf);
+    if (tf === "1Y") {
+      // 🌟 สร้าง Mock Data 1 ปี โดยอิงจากราคาปัจจุบันเป็นตัวจบ
+      const base = currentPrice > 0 ? currentPrice : 41000;
+      const mock1YearData = [
+        { time: "พ.ค. 68", actual: base - 6000 },
+        { time: "มิ.ย. 68", actual: base - 5500 },
+        { time: "ก.ค. 68", actual: base - 5200 },
+        { time: "ส.ค. 68", actual: base - 4800 },
+        { time: "ก.ย. 68", actual: base - 4500 },
+        { time: "ต.ค. 68", actual: base - 3000 },
+        { time: "พ.ย. 68", actual: base - 2500 },
+        { time: "ธ.ค. 68", actual: base - 2000 },
+        { time: "ม.ค. 69", actual: base - 1500 },
+        { time: "ก.พ. 69", actual: base - 1000 },
+        { time: "มี.ค. 69", actual: base - 500 },
+        { time: "ปัจจุบัน", actual: base },
+      ];
+      setChartData(mock1YearData);
+    } else {
+      // กลับมาใช้ข้อมูลจริง 1 วันที่โหลดไว้แล้ว
+      setChartData(dailyData);
+    }
+  };
+
   const handleCancelPlan = () => {
     Swal.fire({
       title: "ยืนยันการยกเลิก?",
       text: "ระบบจะปรับคุณกลับไปเป็น Free Tier ทันที",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#ef4444", // 🔴 เพิ่มบรรทัดนี้: สีแดง (ปุ่มใช่, ยกเลิก!)
-      cancelButtonColor: "#94a3b8", // ⚪ เพิ่มบรรทัดนี้: สีเทา (ปุ่ม Cancel)
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#94a3b8",
       confirmButtonText: "ใช่, ยกเลิก!",
-      cancelButtonText: "ปิด", // (เพิ่มบรรทัดนี้ด้วยก็ได้ครับ ปุ่มจะได้ชื่อ "ปิด" แทน "Cancel")
+      cancelButtonText: "ปิด",
     }).then((result) => {
       if (result.isConfirmed) {
         const updatedUser = { ...user, plan_id: 1 };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         setUser(updatedUser);
         window.dispatchEvent(new Event("userUpdated"));
+        
+        // ถ้าอยู่หน้า 1 ปี แล้วกดยกเลิกแพ็กเกจ ให้เด้งกลับมา 1 วัน
+        if (timeframe === "1Y") {
+            setTimeframe("1D");
+            setChartData(dailyData);
+        }
+
         Swal.fire("ยกเลิกแล้ว", "", "success");
       }
     });
@@ -138,7 +189,6 @@ export default function DashboardOverview() {
               <Link href="/api-keys" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white transition-all">
                 <KeyIcon className="w-5 h-5" /> API Keys
               </Link>
-              {/* 🌟 เอากลับมาให้แล้วครับ Usage Metrics */}
               <Link href="/api-keys?tab=Usage" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white transition-all">
                 <ChartBarIcon className="w-5 h-5" /> Usage Metrics
               </Link>
@@ -206,15 +256,32 @@ export default function DashboardOverview() {
           </div>
 
           {/* Real Graph */}
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[400px] shadow-sm">
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[420px] shadow-sm">
             <div className="flex justify-between items-end mb-6">
-              <h3 className="text-lg font-bold text-[#0B152A]">Real-time Market Data</h3>
+              <div>
+                <h3 className="text-lg font-bold text-[#0B152A] mb-3">Market Data Overview</h3>
+                {/* 🌟 ปุ่ม Toggle สลับ 1 วัน / 1 ปี */}
+                <div className="flex bg-slate-100 p-1 rounded-lg w-max">
+                  <button
+                    onClick={() => handleTimeframeChange('1D')}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${timeframe === '1D' ? 'bg-white shadow text-[#0B152A]' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    1 วัน (Live)
+                  </button>
+                  <button
+                    onClick={() => handleTimeframeChange('1Y')}
+                    className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${timeframe === '1Y' ? 'bg-white shadow text-[#0B152A]' : 'text-slate-400 hover:text-slate-600'}`}
+                  >
+                    1 ปี (Mock) {user?.plan_id < 2 && <LockClosedIcon className="w-3 h-3" />}
+                  </button>
+                </div>
+              </div>
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Live Price</span>
                 <span className="text-2xl font-bold text-amber-500">฿{currentPrice.toLocaleString()}</span>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height="80%">
+            <ResponsiveContainer width="100%" height="75%">
               <ComposedChart data={chartData}>
                 <defs>
                   <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
@@ -223,7 +290,6 @@ export default function DashboardOverview() {
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                {/* 🌟 ย้ายแกน Y มาขวามือ (orientation="right") และแสดงตัวเลขราคา */}
                 <YAxis orientation="right" domain={['dataMin - 100', 'dataMax + 100']} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `฿${v.toLocaleString()}`} />
                 <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} />
                 <Area type="monotone" dataKey="actual" fill="url(#colorActual)" stroke="#D99A1F" strokeWidth={3} />
@@ -268,7 +334,6 @@ export default function DashboardOverview() {
                   <span className="text-sm font-bold text-purple-900">Sentiment Score</span>
                   <span className="text-2xl font-black text-green-600">+14</span>
                 </div>
-                {/* 🌟 เปลี่ยนข้อความวิเคราะห์ให้เข้ากับราคา 73,480 */}
                 <p className="text-[11px] text-purple-700/80 leading-relaxed">
                   วิเคราะห์จากโมเมนตัม: ราคาปัจจุบันทะลุแนวต้านสำคัญที่ 73,000 บาท แรงซื้อจากปัจจัยภูมิรัฐศาสตร์และแนวโน้มเฟดลดดอกเบี้ย ส่งผลให้มีโอกาสไปต่อสูง
                 </p>
@@ -276,7 +341,6 @@ export default function DashboardOverview() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 border border-slate-100 rounded-2xl">
                   <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ราคาคาดการณ์ (สัปดาห์หน้า)</span>
-                  {/* 🌟 ราคาคาดการณ์ขึ้นจาก 73,480 */}
                   <p className="text-lg font-bold text-slate-800 mt-1">฿74,500</p>
                 </div>
                 <div className="p-4 border border-slate-100 rounded-2xl">
