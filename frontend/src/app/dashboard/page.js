@@ -1,28 +1,41 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link"; // 🌟 ใช้ Link สำหรับย้ายหน้า
+import Link from "next/link";
 import {
-  ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ResponsiveContainer
+  ComposedChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
 } from "recharts";
 import {
-  Squares2X2Icon, KeyIcon, ChartBarIcon, ArrowTrendingUpIcon, ShieldCheckIcon
+  Squares2X2Icon,
+  KeyIcon,
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  ShieldCheckIcon,
+  LockClosedIcon,
+  SparklesIcon,
+  BuildingStorefrontIcon,
 } from "@heroicons/react/24/outline";
+import Swal from "sweetalert2";
 
-const liveChartData = [
-  { time: "00:00", actual: 2365.12, projected: 2372.4 },
-  { time: "04:00", actual: 2396.3, projected: 2402.5 },
-  { time: "08:00", actual: 2384.2, projected: 2390.1 },
-  { time: "12:00", actual: 2358.9, projected: 2362.1 },
-  { time: "16:00", actual: 2373.1, projected: 2377.2 },
-  { time: "20:00", actual: 2412.8, projected: 2418.9 },
-  { time: "23:00", actual: 2428.9, projected: 2438.5 },
+const mockShops = [
+  { name: "ฮั่วเซ่งเฮง (เยาวราช)", fee: "฿500", trend: "ถูกที่สุด" },
+  { name: "ทองสมสมัย", fee: "฿550", trend: "คงที่" },
+  { name: "ออโรร่า", fee: "฿620", trend: "คงที่" },
+  { name: "แม่ทองสุก", fee: "฿650", trend: "แพงขึ้น" },
+  { name: "YLG Bullion", fee: "฿680", trend: "คงที่" },
 ];
 
 export default function DashboardOverview() {
   const [user, setUser] = useState(null);
-  const [activeKeyCount, setActiveKeyCount] = useState(0); 
-  const [totalUsage, setTotalUsage] = useState(0); 
+  const [activeKeyCount, setActiveKeyCount] = useState(0);
+  const [totalUsage, setTotalUsage] = useState(0);
+  const [chartData, setChartData] = useState([]);
+  const [currentPrice, setCurrentPrice] = useState(0); // เก็บราคาล่าสุดเพื่อโชว์
 
   useEffect(() => {
     const loadData = async () => {
@@ -34,8 +47,8 @@ export default function DashboardOverview() {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
 
+      // 1. Usage Stats
       try {
-        // 🚀 ดึง API Keys แค่เพื่อนับจำนวนและหายอดใช้งานรวม (เบามาก)
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
         const response = await fetch(`${apiUrl}/keys/${parsedUser.id}`);
         if (response.ok) {
@@ -43,36 +56,72 @@ export default function DashboardOverview() {
           setActiveKeyCount(keysFromDB.length);
           setTotalUsage(keysFromDB.reduce((sum, key) => sum + (key.usage || 0), 0));
         }
-      } catch (error) {
-        console.error("Failed to load dashboard stats:", error);
-      }
+      } catch (error) { console.error(error); }
+
+      // 2. ข้อมูลกราฟจริง 
+      try {
+        const cgRes = await fetch("https://api.coingecko.com/api/v3/coins/pax-gold/market_chart?vs_currency=thb&days=1");
+        const cgData = await cgRes.json();
+        
+        const rawPrices = cgData.prices;
+        const formattedData = [];
+        const step = Math.floor(rawPrices.length / 12); 
+
+        for (let i = 0; i < rawPrices.length; i += step) {
+          const item = rawPrices[i];
+          const date = new Date(item[0]);
+          const pricePerBaht = (item[1] / 31.1035) * 15.244;
+          formattedData.push({
+            time: date.getHours().toString().padStart(2, '0') + ":00",
+            actual: Math.round(pricePerBaht / 10) * 10,
+          });
+        }
+        
+        const lastItem = rawPrices[rawPrices.length - 1];
+        const lastPrice = Math.round(((lastItem[1] / 31.1035) * 15.244) / 10) * 10;
+        
+        formattedData.push({
+          time: "ตอนนี้",
+          actual: lastPrice,
+        });
+
+        setChartData(formattedData);
+        setCurrentPrice(lastPrice);
+      } catch (error) { console.error(error); }
     };
     loadData();
   }, []);
 
-  const getPlanDetails = (planId) => {
-    switch (planId) {
-      case 2: return { name: "Plus Tier ⚡", badge: "bg-amber-50 text-amber-700 border border-amber-200" };
-      case 3: return { name: "Pro Tier 🏆", badge: "bg-purple-50 text-purple-700 border border-purple-200" };
-      default: return { name: "Free Tier 💡", badge: "bg-slate-100 text-slate-600 border border-slate-200" };
-    }
-  };
-
   const handleCancelPlan = () => {
-    if (window.confirm("แน่ใจหรือไม่ที่จะยกเลิกแพ็กเกจ?")) {
-      const userObj = { ...user, plan_id: 1 };
-      localStorage.setItem("user", JSON.stringify(userObj));
-      setUser(userObj);
-      window.dispatchEvent(new Event('userUpdated'));
-    }
+    Swal.fire({
+      title: "ยืนยันการยกเลิก?",
+      text: "ระบบจะปรับคุณกลับไปเป็น Free Tier ทันที",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444", // 🔴 เพิ่มบรรทัดนี้: สีแดง (ปุ่มใช่, ยกเลิก!)
+      cancelButtonColor: "#94a3b8", // ⚪ เพิ่มบรรทัดนี้: สีเทา (ปุ่ม Cancel)
+      confirmButtonText: "ใช่, ยกเลิก!",
+      cancelButtonText: "ปิด", // (เพิ่มบรรทัดนี้ด้วยก็ได้ครับ ปุ่มจะได้ชื่อ "ปิด" แทน "Cancel")
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const updatedUser = { ...user, plan_id: 1 };
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        setUser(updatedUser);
+        window.dispatchEvent(new Event("userUpdated"));
+        Swal.fire("ยกเลิกแล้ว", "", "success");
+      }
+    });
   };
 
-  if (!user) return <div className="min-h-screen flex items-center justify-center bg-slate-50 font-bold text-slate-400 animate-pulse">Loading System...</div>;
+  if (!user) return <div className="min-h-screen flex items-center justify-center bg-slate-50 font-bold text-slate-400">Loading...</div>;
 
-  const userPlan = getPlanDetails(user.plan_id);
+  const planInfo = user.plan_id === 3 ? { name: "Pro Tier 🏆", badge: "bg-purple-50 text-purple-700 border-purple-200" } :
+                   user.plan_id === 2 ? { name: "Plus Tier ⚡", badge: "bg-amber-50 text-amber-700 border-amber-200" } :
+                   { name: "Free Tier 💡", badge: "bg-slate-100 text-slate-600 border-slate-200" };
+
   const maxLimit = user.plan_id === 3 ? 100000 : user.plan_id === 2 ? 10000 : 1000;
   const percentUsed = Math.min((totalUsage / maxLimit) * 100, 100);
-  const isDanger = percentUsed >= 90; 
+  const isDanger = percentUsed >= 90;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc] font-sans">
@@ -83,14 +132,14 @@ export default function DashboardOverview() {
           <div className="bg-[#0A1D3A] rounded-3xl p-6 text-white shadow-2xl sticky top-6">
             <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6">Microservices</h2>
             <nav className="space-y-2">
-              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] text-black shadow-lg">
+              <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] text-black shadow-lg">
                 <Squares2X2Icon className="w-5 h-5" /> Overview
               </button>
-              {/* 🌟 กดปุ๊บ ไปหน้า API Keys พร้อม Tab ที่เลือก */}
-              <Link href="/api-keys?tab=Keys" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-white/5">
+              <Link href="/api-keys" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white transition-all">
                 <KeyIcon className="w-5 h-5" /> API Keys
               </Link>
-              <Link href="/api-keys?tab=Usage" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-white/5">
+              {/* 🌟 เอากลับมาให้แล้วครับ Usage Metrics */}
+              <Link href="/api-keys?tab=Usage" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white transition-all">
                 <ChartBarIcon className="w-5 h-5" /> Usage Metrics
               </Link>
             </nav>
@@ -99,36 +148,45 @@ export default function DashboardOverview() {
 
         {/* Main Content */}
         <main className="flex-1 space-y-8 animate-fade-up">
-          <header className="flex flex-col gap-4 mb-8">
+          <header className="flex flex-col gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-[#0B152A]">Overview</h1>
-              <p className="text-slate-500">Welcome back, {user.email}</p>
+              <h1 className="text-3xl font-bold text-[#0B152A]">Dashboard</h1>
+              <p className="text-slate-500">{user.email}</p>
             </div>
             {isDanger && (
               <div className="bg-red-50 border border-red-200 p-4 rounded-2xl flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center"><ChartBarIcon className="w-5 h-5 text-red-600 animate-pulse" /></div>
+                  <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <ChartBarIcon className="w-5 h-5 text-red-600 animate-pulse" />
+                  </div>
                   <div>
                     <h4 className="text-sm font-bold text-red-700">Warning: High API Usage</h4>
-                    <p className="text-xs text-red-600/80">คุณใช้งานไปแล้ว {percentUsed.toFixed(1)}% ({totalUsage.toLocaleString()} / {maxLimit.toLocaleString()})</p>
+                    <p className="text-xs text-red-600/80">
+                      คุณใช้งานไปแล้ว {percentUsed.toFixed(1)}% ({totalUsage.toLocaleString()} / {maxLimit.toLocaleString()})
+                    </p>
                   </div>
                 </div>
-                <Link href="/pricing" className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-all">Upgrade Plan</Link>
+                <Link href="/pricing" className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition-all">
+                  Upgrade Plan
+                </Link>
               </div>
             )}
-            <div className={`flex items-center justify-between px-5 py-3 rounded-2xl shadow-sm ${userPlan.badge}`}>
-              <span className="text-sm font-bold">Current Plan: {userPlan.name}</span>
+            <div className={`flex items-center justify-between px-5 py-3 rounded-2xl shadow-sm border ${planInfo.badge}`}>
+              <span className="text-sm font-bold">Current Plan: {planInfo.name}</span>
               {user.plan_id > 1 && (
-                <button onClick={handleCancelPlan} className="text-xs font-bold text-red-500 bg-white px-4 py-2 rounded-xl border border-red-200 transition-all">Cancel Plan</button>
+                <button onClick={handleCancelPlan} className="text-xs font-bold text-red-500 bg-white px-4 py-2 rounded-xl border border-red-200 hover:bg-red-50 transition-all">
+                  Cancel Plan
+                </button>
               )}
             </div>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className={`p-6 rounded-3xl border shadow-sm transition-all ${isDanger ? 'bg-red-50 border-red-200' : 'bg-white border-slate-100'}`}>
-              <ChartBarIcon className={`w-6 h-6 mb-4 ${isDanger ? 'text-red-500 animate-bounce' : 'text-yellow-500'}`} />
-              <p className={`text-[10px] font-bold uppercase tracking-wider ${isDanger ? 'text-red-500' : 'text-slate-400'}`}>Calls Today</p>
-              <p className={`text-2xl font-bold mt-1 ${isDanger ? 'text-red-700' : 'text-black'}`}>{totalUsage.toLocaleString()} <span className="text-sm font-medium opacity-50">/ {maxLimit.toLocaleString()}</span></p>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+              <ChartBarIcon className="w-6 h-6 text-yellow-500 mb-4" />
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Calls Today</p>
+              <p className="text-2xl font-bold text-black mt-1">{totalUsage.toLocaleString()} <span className="text-xs opacity-40">/ {maxLimit.toLocaleString()}</span></p>
             </div>
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
               <ArrowTrendingUpIcon className="w-6 h-6 text-yellow-500 mb-4" />
@@ -147,23 +205,86 @@ export default function DashboardOverview() {
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[400px] shadow-sm mb-8">
-            <div className="mb-6"><h3 className="text-lg font-bold text-[#0B152A]">Live Gold Price</h3></div>
-            <ResponsiveContainer width="100%" height="83%">
-              <ComposedChart data={liveChartData}>
+          {/* Real Graph */}
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 h-[400px] shadow-sm">
+            <div className="flex justify-between items-end mb-6">
+              <h3 className="text-lg font-bold text-[#0B152A]">Real-time Market Data</h3>
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Live Price</span>
+                <span className="text-2xl font-bold text-amber-500">฿{currentPrice.toLocaleString()}</span>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height="80%">
+              <ComposedChart data={chartData}>
                 <defs>
                   <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F6C65B" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#F6C65B" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#F6C65B" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#F6C65B" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="time" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis domain={["dataMin - 50", "dataMax + 50"]} stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `฿${v.toLocaleString()}`}/>
-                <Tooltip contentStyle={{ borderRadius: "16px", border: "none", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" }} />
+                <XAxis dataKey="time" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                {/* 🌟 ย้ายแกน Y มาขวามือ (orientation="right") และแสดงตัวเลขราคา */}
+                <YAxis orientation="right" domain={['dataMin - 100', 'dataMax + 100']} stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `฿${v.toLocaleString()}`} />
+                <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }} />
                 <Area type="monotone" dataKey="actual" fill="url(#colorActual)" stroke="#D99A1F" strokeWidth={3} />
-                <Line type="monotone" dataKey="projected" stroke="#94a3b8" strokeDasharray="5 5" dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Shop Ranking (Plus) */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+              {user.plan_id < 2 && <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
+                <LockClosedIcon className="w-10 h-10 text-slate-400 mb-2" />
+                <p className="font-bold text-slate-700">Plus Feature Only</p>
+              </div>}
+              <h3 className="text-lg font-bold text-[#0B152A] mb-4 flex items-center gap-2">
+                <BuildingStorefrontIcon className="w-6 h-6 text-amber-500" /> Lowest Making Charges
+              </h3>
+              <div className="space-y-3">
+                {mockShops.map((shop, i) => (
+                  <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
+                    <span className="font-bold text-slate-700 text-sm">{i+1}. {shop.name}</span>
+                    <div className="text-right">
+                      <span className="text-amber-600 font-bold block">{shop.fee}</span>
+                      <span className="text-[10px] text-slate-400">{shop.trend}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Forecast (Pro) */}
+            <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm relative overflow-hidden">
+              {user.plan_id < 3 && <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center">
+                <LockClosedIcon className="w-10 h-10 text-slate-400 mb-2" />
+                <p className="font-bold text-slate-700">Pro Feature Only</p>
+              </div>}
+              <h3 className="text-lg font-bold text-[#0B152A] mb-4 flex items-center gap-2">
+                <SparklesIcon className="w-6 h-6 text-purple-500" /> AI Gold Forecast
+              </h3>
+              <div className="bg-purple-50 p-5 rounded-2xl border border-purple-100 mb-4">
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-sm font-bold text-purple-900">Sentiment Score</span>
+                  <span className="text-2xl font-black text-green-600">+14</span>
+                </div>
+                {/* 🌟 เปลี่ยนข้อความวิเคราะห์ให้เข้ากับราคา 73,480 */}
+                <p className="text-[11px] text-purple-700/80 leading-relaxed">
+                  วิเคราะห์จากโมเมนตัม: ราคาปัจจุบันทะลุแนวต้านสำคัญที่ 73,000 บาท แรงซื้อจากปัจจัยภูมิรัฐศาสตร์และแนวโน้มเฟดลดดอกเบี้ย ส่งผลให้มีโอกาสไปต่อสูง
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 border border-slate-100 rounded-2xl">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">ราคาคาดการณ์ (สัปดาห์หน้า)</span>
+                  {/* 🌟 ราคาคาดการณ์ขึ้นจาก 73,480 */}
+                  <p className="text-lg font-bold text-slate-800 mt-1">฿74,500</p>
+                </div>
+                <div className="p-4 border border-slate-100 rounded-2xl">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Market Trend</span>
+                  <p className="text-lg font-bold text-green-500 mt-1">Strong Bullish ↗</p>
+                </div>
+              </div>
+            </div>
           </div>
         </main>
       </div>

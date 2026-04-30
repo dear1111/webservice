@@ -4,6 +4,7 @@ FROM golang:alpine
 WORKDIR /app
 
 # 2. ติดตั้งเครื่องมือ 'Air' สำหรับทำ Hot-reload (รับจบหน้าที่แทน nodemon)
+RUN apk add --no-cache git
 RUN go install github.com/air-verse/air@latest
 
 # 3. ก๊อปปี้ไฟล์จัดการแพ็กเกจ (แทนที่ package.json) มาก่อนเพื่อความเร็วในการ Build Cache

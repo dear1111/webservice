@@ -5,7 +5,7 @@ import PricingCards from "@/components/pricingCards";
 
 const PricingPage = () => {
   return (
-    <main className="py-24 text-center">
+    <main>
       <PricingCards /> {/* 🌟 ใช้ตัวเดียวกันเป๊ะ ลอจิกเหมือนกันหมด */}
     </main>
   );

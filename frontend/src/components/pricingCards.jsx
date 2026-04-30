@@ -63,9 +63,9 @@ const PricingPage = () => {
 
                         <ul className="space-y-4 mb-4 flex-1 text-sm text-left">
                             <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Embeddable JS widget</li>
-                            <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Spot price preview (with watermark)</li>
                             <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> 15-minute price delay</li>
                             <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Up to 1,000 widget loads / day</li>
+                            <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Basic Support</li>
                         </ul>
                         <button
                             onClick={handleDowngradeToFree}
@@ -136,11 +136,10 @@ const PricingPage = () => {
 
                         <ul className="space-y-4 mb-4 flex-1 text-sm text-left">
                             <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Real-time WebSocket API</li>
-                            <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Webhook events & alerts</li>
                             <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Market Sentiment Score</li>
                             <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Predictive trend models</li>
                             <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> 100,000+ API calls / day</li>
-                            <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Priority SLA support</li>
+                            <li className="flex text-slate-800"><CheckIcon className="w-5 h-5 text-yellow-500 mr-3 shrink-0" /> Priority Support</li>
                         </ul>
 
                         <Link href="/checkout?plan=pro" className="w-full py-2 px-4 bg-[#0B152A] hover:bg-slate-800 text-white text-sm rounded-lg font-medium transition-colors mt-auto text-center">

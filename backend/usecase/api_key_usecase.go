@@ -5,11 +5,20 @@ import (
 	"backend/repository"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json" // สำคัญมาก
+	"encoding/json"
 	"errors"
-	"math"          // ใช้สำหรับ Round ราคา
-	"net/http"      // สำคัญมาก
+	"math"
+	"net/http"
+	"sync" // 🌟 นำเข้า sync สำหรับทำ Cache
 	"time"
+)
+
+// 🌟 ตัวแปร Global สำหรับเก็บ Cache ราคา
+var (
+	cachedGoldPrice map[string]interface{}
+	lastFetchTime   time.Time
+	cacheMutex      sync.Mutex
+	cacheDuration   = 1 * time.Minute // ตั้งเวลาจำข้อมูลไว้ 1 นาที
 )
 
 type APIKeyUsecase struct {
@@ -44,17 +53,27 @@ func (u *APIKeyUsecase) GetKeysByUser(userID int) ([]domain.APIKey, error) {
 	return u.APIKeyRepo.GetByUserID(userID)
 }
 
-// ฟังก์ชันดึงราคาจริง
 func (u *APIKeyUsecase) GetGoldPrices(keyString string) (map[string]interface{}, error) {
-	// 1. ตรวจสอบ Key
+	// 1. ตรวจสอบ Key ก่อนว่ามีในระบบไหม
 	_, err := u.APIKeyRepo.GetByKey(keyString)
 	if err != nil {
 		return nil, errors.New("API Key ไม่ถูกต้อง")
 	}
-	_ = u.APIKeyRepo.IncrementUsage(keyString)
 
-	// 2. ดึงราคาจาก CoinGecko (PAX Gold)
-	// สร้าง Client ที่มี Timeout เพื่อไม่ให้ระบบค้างถ้า API นอกช้า
+	// 🚀 --- ระบบ Cache ทำงานตรงนี้ ---
+	cacheMutex.Lock()
+	// ถ้ามีข้อมูลที่จำไว้ และยังไม่หมดอายุ 1 นาที
+	if cachedGoldPrice != nil && time.Since(lastFetchTime) < cacheDuration {
+		cacheMutex.Unlock() // ปลดล็อก
+		
+		// ตัดโควต้า User เพราะดึงข้อมูลสำเร็จจาก Cache
+		_ = u.APIKeyRepo.IncrementUsage(keyString)
+		return cachedGoldPrice, nil
+	}
+	cacheMutex.Unlock() // ปลดล็อกแล้วให้มันวิ่งไปดึงของใหม่ต่อ
+	// ------------------------------
+
+	// 2. ดึงราคาจาก CoinGecko 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get("https://api.coingecko.com/api/v3/simple/price?ids=pax-gold&vs_currencies=thb")
 	if err != nil {
@@ -62,28 +81,44 @@ func (u *APIKeyUsecase) GetGoldPrices(keyString string) (map[string]interface{},
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, errors.New("ถูกจำกัดการเข้าถึงจากแหล่งข้อมูล (Rate Limit) โปรดรอสักครู่")
+	} else if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("ไม่สามารถดึงข้อมูลราคาได้ในขณะนี้")
+	}
+
 	var result map[string]map[string]float64
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, errors.New("อ่านข้อมูลราคาไม่ได้")
 	}
 
-	// 3. คำนวณราคา (Ounce -> บาททอง)
-	pricePerOunce := result["pax-gold"]["thb"]
-	if pricePerOunce == 0 {
+	// 3. ตรวจสอบข้อมูล
+	pricePerOunce, exists := result["pax-gold"]["thb"]
+	if !exists || pricePerOunce == 0 {
 		return nil, errors.New("ไม่ได้รับข้อมูลราคาจากแหล่งข้อมูล")
 	}
 
-	// สูตร: (ราคา Ounce / 31.1035) * 15.244
+	// 4. คำนวณราคา
 	pricePerBaht := (pricePerOunce / 31.1035) * 15.244
-	
-	// ปัดเศษหลักสิบตามราคาทองไทย (เช่น 40652 -> 40650)
 	finalPrice := math.Round(pricePerBaht/10) * 10
 
-	return map[string]interface{}{
+	newPriceData := map[string]interface{}{
 		"buy_price":  finalPrice,
 		"sell_price": finalPrice + 100,
 		"currency":   "THB",
 		"unit":       "1 Baht Gold (15.244g)",
 		"timestamp":  time.Now().Format(time.RFC3339),
-	}, nil
+	}
+
+	// 🚀 --- บันทึกข้อมูลลง Cache ---
+	cacheMutex.Lock()
+	cachedGoldPrice = newPriceData
+	lastFetchTime = time.Now()
+	cacheMutex.Unlock()
+	// ----------------------------
+
+	// อัปเดต Usage เมื่อดึงข้อมูลจากเว็บนอกสำเร็จ
+	_ = u.APIKeyRepo.IncrementUsage(keyString)
+
+	return newPriceData, nil
 }

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     // ฟังก์ชันโหลดข้อมูล
@@ -21,14 +23,12 @@ const Navbar = () => {
     return () => window.removeEventListener('userUpdated', loadUser);
   }, []);
 
-
   const handleSignOut = () => {
     localStorage.removeItem('user'); // ลบข้อมูลออก
     setUser(null); // เคลียร์ State
     window.location.href = '/'; // กลับหน้าแรก
   };
-  // ดึง path ปัจจุบัน (เช่น '/', '/pricing', '/dashboard')
-  const pathname = usePathname();
+
   // สร้าง Array ของเมนูเพื่อให้จัดการโค้ดและเช็คเงื่อนไขได้ง่ายขึ้น
   const navLinks = [
     { name: "Home", href: "/" },
@@ -37,6 +37,15 @@ const Navbar = () => {
     { name: "Docs", href: "/docs" },
     { name: "Support", href: "/support" },
   ];
+
+  // 🌟 ฟังก์ชันจัดการปุ่ม Get API Keys
+  const handleGetApiKeys = () => {
+    if (user) {
+      router.push("/api-keys"); // ถ้าล็อกอินแล้ว ไปหน้า API Keys
+    } else {
+      router.push("/login"); // ถ้ายังไม่ล็อกอิน ไปหน้า Login
+    }
+  };
 
   return (
     <nav className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-gradient-to-br from-white to-gray-100 sticky top-0 z-50 h-16">
@@ -54,7 +63,11 @@ const Navbar = () => {
       {/* ใช้ flex-grow และ justify-center เพื่อให้เมนูอยู่กลางเสมอ ไม่ว่าฝั่งซ้ายขวาจะยาวเท่าไหร่ */}
       <div className="hidden md:flex flex-grow justify-center items-center gap-8 text-sm">
         {navLinks.map((link) => {
-          const isActive = pathname === link.href;
+          // 🌟 เช็คว่าถ้าเป็นเมนู Dashboard ให้เรืองแสงสีเหลืองตอนอยู่หน้า /api-keys ด้วย
+          const isActive = link.name === "Dashboard" 
+            ? (pathname === "/dashboard" || pathname.startsWith("/api-keys"))
+            : (pathname === link.href);
+
           return (
             <Link
               key={link.name}
@@ -84,12 +97,12 @@ const Navbar = () => {
                   {user.email.split('@')[0]}
                 </span>
                 <span className="text-[8px] font-bold text-amber-600 uppercase tracking-wider">
-  {user.plan_id === 3 ? 'Pro Tier' : user.plan_id === 2 ? 'Plus Tier' : 'Free Tier'}
-</span>
+                  {user.plan_id === 3 ? 'Pro Tier' : user.plan_id === 2 ? 'Plus Tier' : 'Free Tier'}
+                </span>
               </div>
             </div>
 
-            {/* Sign out - เพิ่ม whitespace-nowrap กันตัวหนังสือเด้งลงล่าง */}
+            {/* Sign out */}
             <button
               onClick={handleSignOut}
               className="text-xs font-bold text-gray-400 hover:text-red-500 transition-colors cursor-pointer whitespace-nowrap"
@@ -97,22 +110,27 @@ const Navbar = () => {
               Sign out
             </button>
 
-            <Link
-              href="/dashboard?tab=API+Keys"
-              className="w-28 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-95 active:scale-95 transition-all shadow-sm text-gray-800 py-2 rounded-lg font-bold text-[10px] text-center uppercase"
+            {/* 🌟 ปุ่ม Get API Key (ตอนล็อกอินแล้ว) */}
+            <button
+              onClick={handleGetApiKeys}
+              className="w-28 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-95 active:scale-95 transition-all shadow-sm text-gray-800 py-2 rounded-lg font-bold text-[10px] text-center uppercase cursor-pointer"
             >
               Get API key
-            </Link>
+            </button>
           </div>
         ) : (
           <div className="flex items-center gap-6">
             <Link href="/login" className="text-xs font-bold text-gray-600 hover:text-black transition-colors whitespace-nowrap">
               Sign in
             </Link>
-            <Link href="/pricing"
-              className="w-28 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-95 active:scale-95 transition-all shadow-sm text-gray-800 py-2 rounded-lg font-bold text-[10px] text-center uppercase">
+            
+            {/* 🌟 ปุ่ม Get API Key (ตอนยังไม่ล็อกอิน) */}
+            <button
+              onClick={handleGetApiKeys}
+              className="w-28 bg-gradient-to-br from-[#F6C65B] to-[#D99A1F] hover:brightness-95 active:scale-95 transition-all shadow-sm text-gray-800 py-2 rounded-lg font-bold text-[10px] text-center uppercase cursor-pointer"
+            >
               Get API key
-            </Link>
+            </button>
           </div>
         )}
       </div>
